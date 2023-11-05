@@ -1,0 +1,51 @@
+name: OSF Test
+
+# Trigger the workflow on pull request
+on: workflow_dispatch
+permissions: write-all
+
+jobs:
+   create_new_branch:
+     runs-on: ubuntu-latest
+     outputs:
+       BRANCHNAME: ${{ steps.branch.outputs.branchName }}
+
+     steps:
+     # This will automatically create a new branch from this issue, using custom config at /.github/issue-branch.yml 🟢
+     - name: Create Issue Branch
+       id: branch
+       uses: robvanderleek/create-issue-branch@main
+       env:
+         GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
+        
+      # Set up Python
+     - name: Set up Python
+       uses: actions/setup-python@v4
+       with:
+         python-version: 3.11
+
+    # Install datalad 🟢
+     - name: Install Datalad
+       id: testing
+       run: |
+        sudo apt-get install datalad
+        python3 -m pip install datalad-osf
+        pip install requests
+        git config --global user.name "hvgazula"
+        git config --global user.email "hvgazula@umich.edu"
+
+         # Checkout the repository to the GitHub Actions runner 🟢
+     - uses: actions/checkout@v4
+       with:
+         ref: ${{ steps.branch.outputs.branchName }}
+         fetch-depth: 0
+
+     # Git annex addurl the weights
+     - name: Git-annex/Datalad add the weights
+       env:
+         OSF_TOKEN: ${{ secrets.OSF_TOKEN }}
+       run: |
+        datalad siblings
+        datalad download-url -m "Added cortex weights" https://hvgazula.github.io/cortexode-forked/ckpts.zip
+        datalad push --to osf-storage
+        datalad push --to origin
