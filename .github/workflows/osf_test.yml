@@ -47,5 +47,5 @@ jobs:
        run: |
         datalad siblings
         datalad download-url -m "Added cortex weights" https://hvgazula.github.io/cortexode-forked/ckpts.zip
-        datalad push --to osf-storage
+        datalad push --to osf-annex-storage
         datalad push --to origin
